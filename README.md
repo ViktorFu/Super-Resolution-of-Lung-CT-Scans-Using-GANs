@@ -26,10 +26,6 @@ Before running this project, ensure that you have the following dependencies ins
    ```bash
    cd Super-Resolution-of-Lung-CT-Scans-Using-GANs
    ```
-3. Install the required dependencies:
-   ```bash
-   pip install -r requirements.txt
-   ```
 
 ## Usage
 To apply the model on your Lung CT scans, follow these steps:
@@ -37,7 +33,7 @@ To apply the model on your Lung CT scans, follow these steps:
 1. Prepare your low-resolution CT scan images in the specified input directory.
 2. Run the training or inference script:
    ```bash
-   python run_inference.py --input /path/to/low-res-image --output /path/to/save/high-res-image
+   python predict.py --input /path/to/low-res-image --output /path/to/save/high-res-image
    ```
 
 ## Model Training
@@ -45,7 +41,7 @@ If you would like to train the model from scratch:
 1. Ensure that you have a dataset of low-resolution and high-resolution Lung CT scans.
 2. Start the training process:
    ```bash
-   python train_model.py --data /path/to/dataset --epochs 100
+   python train.py --data /path/to/dataset --epochs 100
    ```
 
 ## Results
