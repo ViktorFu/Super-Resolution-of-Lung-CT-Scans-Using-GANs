@@ -45,4 +45,4 @@ If you would like to train the model from scratch:
    ```
 
 ## Results
-The model generates high-resolution CT scans from low-resolution inputs, improving the quality of the images while preserving important features. The effectiveness of the model can be visualized through various examples in the `results/` folder.
+The model generates high-resolution CT scans from low-resolution inputs, improving the quality of the images while preserving important features.
