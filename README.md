@@ -1,7 +1,3 @@
-Here’s a professional README draft for your project on GitHub:
-
----
-
 # Super-Resolution of Lung CT Scans Using GANs
 
 ## Overview
@@ -54,13 +50,3 @@ If you would like to train the model from scratch:
 
 ## Results
 The model generates high-resolution CT scans from low-resolution inputs, improving the quality of the images while preserving important features. The effectiveness of the model can be visualized through various examples in the `results/` folder.
-
-## Contributing
-We welcome contributions to improve the project. If you have suggestions or bug fixes, feel free to open an issue or submit a pull request.
-
-## License
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
----
-
-This README is structured to provide clarity about the project, its functionality, and how to use it. Feel free to adjust the details, such as dataset paths or specific instructions, based on your project’s exact setup.
