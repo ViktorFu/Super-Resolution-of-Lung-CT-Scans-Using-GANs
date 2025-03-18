@@ -15,7 +15,6 @@ Before running this project, ensure that you have the following dependencies ins
 - NumPy
 - OpenCV
 - Matplotlib
-- Other dependencies listed in the `requirements.txt` file
 
 ## Installation
 1. Clone this repository to your local machine:
