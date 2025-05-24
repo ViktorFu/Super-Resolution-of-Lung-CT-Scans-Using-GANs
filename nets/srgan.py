@@ -118,7 +118,7 @@ class Discriminator(nn.Module):
 if __name__ == "__main__":
     from torchsummary import summary
 
-    # 需要使用device来指定网络在GPU还是CPU运行
+    # Use device to specify whether the network runs on GPU or CPU
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     model = Generator(4).to(device)
     summary(model, input_size=(3,56,56))

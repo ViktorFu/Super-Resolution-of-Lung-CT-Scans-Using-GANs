@@ -24,7 +24,7 @@ def fit_one_epoch(G_model_train, D_model_train, G_model, D_model, VGG_feature_mo
                     lr_images, hr_images, y_real, y_fake  = lr_images.cuda(), hr_images.cuda(), y_real.cuda(), y_fake.cuda()
             
             #-------------------------------------------------#
-            #   训练判别器
+            #   Train Discriminator
             #-------------------------------------------------#
             D_optimizer.zero_grad()
 
@@ -42,7 +42,7 @@ def fit_one_epoch(G_model_train, D_model_train, G_model, D_model, VGG_feature_mo
             D_train_loss            = D_real_loss + D_fake_loss
 
             #-------------------------------------------------#
-            #   训练生成器
+            #   Train Generator
             #-------------------------------------------------#
             G_optimizer.zero_grad()
 

@@ -53,11 +53,11 @@ class SRGANDataset(Dataset):
 
     def get_random_data(self, image, input_shape, jitter=.3, hue=.1, sat=1.5, val=1.5, random=True):
         #------------------------------#
-        #   读取图像并转换成RGB图像
+        #   Read image and convert to RGB
         #------------------------------#
         image   = cvtColor(image)
         #------------------------------#
-        #   获得图像的高宽与目标高宽
+        #   Get image dimensions and target dimensions
         #------------------------------#
         iw, ih  = image.size
         h, w    = input_shape
@@ -70,7 +70,7 @@ class SRGANDataset(Dataset):
             dy = (h-nh)//2
 
             #---------------------------------#
-            #   将图像多余的部分加上灰条
+            #   Add gray bars to fill extra space
             #---------------------------------#
             image       = image.resize((nw,nh), Image.BICUBIC)
             new_image   = Image.new('RGB', (w,h), (128,128,128))
@@ -80,7 +80,7 @@ class SRGANDataset(Dataset):
             return image_data
 
         #------------------------------------------#
-        #   对图像进行缩放并且进行长和宽的扭曲
+        #   Scale image and apply aspect ratio distortion
         #------------------------------------------#
         new_ar = w/h * self.rand(1-jitter,1+jitter)/self.rand(1-jitter,1+jitter)
         scale = self.rand(1, 1.5)
@@ -93,7 +93,7 @@ class SRGANDataset(Dataset):
         image = image.resize((nw,nh), Image.BICUBIC)
 
         #------------------------------------------#
-        #   将图像多余的部分加上灰条
+        #   Add gray bars to fill extra space
         #------------------------------------------#
         dx = int(self.rand(0, w-nw))
         dy = int(self.rand(0, h-nh))
@@ -102,7 +102,7 @@ class SRGANDataset(Dataset):
         image = new_image
 
         #------------------------------------------#
-        #   翻转图像
+        #   Flip image
         #------------------------------------------#
         flip = self.rand()<.5
         if flip: image = image.transpose(Image.FLIP_LEFT_RIGHT)
@@ -115,7 +115,7 @@ class SRGANDataset(Dataset):
             image = cv2.warpAffine(np.array(image), M, (w,h), borderValue=[128,128,128]) 
 
         #------------------------------------------#
-        #   色域扭曲
+        #   Color space distortion
         #------------------------------------------#
         hue = self.rand(-hue, hue)
         sat = self.rand(1, sat) if self.rand()<.5 else 1/self.rand(1, sat)
@@ -131,14 +131,14 @@ class SRGANDataset(Dataset):
 
     def random_crop(self, image, width, height):
         #--------------------------------------------#
-        #   如果图像过小无法截取，先对图像进行放大
+        #   If image is too small to crop, enlarge it first
         #--------------------------------------------#
         if image.size[0] < self.hr_shape[1] or image.size[1] < self.hr_shape[0]:
             resized_width, resized_height = get_new_img_size(width, height, img_min_side=np.max(self.hr_shape))
             image = image.resize((resized_width, resized_height), Image.BICUBIC)
 
         #--------------------------------------------#
-        #   随机截取一部分
+        #   Randomly crop a portion
         #--------------------------------------------#
         width1  = randint(0, image.size[0] - width)
         height1 = randint(0, image.size[1] - height)

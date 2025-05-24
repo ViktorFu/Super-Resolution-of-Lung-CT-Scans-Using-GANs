@@ -1,6 +1,6 @@
 #--------------------------------------------------------------#
-#   对单张图片进行预测，运行结果保存在根目录
-#   默认保存文件为results/predict_out/predict_srgan.png
+#   Predict single image, save results in root directory
+#   Default save file: results/predict_out/predict_srgan.png
 #--------------------------------------------------------------#
 from PIL import Image
 
@@ -9,7 +9,7 @@ from srgan import SRGAN
 if __name__ == "__main__":
     srgan = SRGAN()
     #----------------------------#
-    #   单张图片的保存路径
+    #   Single image save path
     #----------------------------#
     save_path_1x1 = "results/predict_out/predict_srgan.png"
 

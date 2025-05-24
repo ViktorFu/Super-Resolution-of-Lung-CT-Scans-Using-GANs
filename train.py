@@ -1,3 +1,5 @@
+import os
+import glob
 import numpy as np
 import torch
 import torch.backends.cudnn as cudnn
@@ -10,54 +12,116 @@ from nets.srgan import Discriminator, Generator
 from utils.dataloader import SRGAN_dataset_collate, SRGANDataset
 from utils.utils_fit import fit_one_epoch
 
+def get_dataset_lines(datasets_path="datasets/"):
+    """
+    Automatically scan the dataset folder and return image path list.
+    Integrated functionality from txt_annotation.py, no need to run separately.
+    
+    Args:
+        datasets_path: Path to the dataset folder
+    
+    Returns:
+        list: Formatted path list (each element ends with \n, compatible with SRGANDataset)
+    """
+    if not os.path.exists(datasets_path):
+        raise ValueError(f"❌ Dataset folder does not exist: {datasets_path}")
+    
+    # Supported image formats (consistent with txt_annotation.py)
+    image_extensions = ['.bmp', '.dib', '.png', '.jpg', '.jpeg', '.pbm', '.pgm', '.ppm', '.tif', '.tiff']
+    
+    # Use glob to scan all image files
+    image_files = []
+    for ext in image_extensions:
+        pattern = os.path.join(datasets_path, f"*{ext}")
+        image_files.extend(glob.glob(pattern))
+        # Also match uppercase extensions
+        pattern = os.path.join(datasets_path, f"*{ext.upper()}")
+        image_files.extend(glob.glob(pattern))
+    
+    # Sort and convert to absolute paths (consistent with txt_annotation.py)
+    image_files = sorted([os.path.abspath(f) for f in image_files])
+    
+    if len(image_files) == 0:
+        raise ValueError(f"❌ No image files found in {datasets_path}!\n"
+                        f"💡 Please ensure:\n"
+                        f"   1. The folder contains image files\n" 
+                        f"   2. Supported formats: {', '.join(image_extensions)}")
+    
+    print(f"✅ Successfully scanned {len(image_files)} training images")
+    print(f"📁 Dataset path: {os.path.abspath(datasets_path)}")
+    
+    # Convert to format expected by SRGANDataset (one path per line)
+    lines = [f"{path}\n" for path in image_files]
+    return lines
+
 if __name__ == "__main__":
     #-------------------------------#
-    #   是否使用Cuda
-    #   没有GPU可以设置成False
+    #   Whether to use CUDA
+    #   Set to False if no GPU available
     #-------------------------------#
     Cuda            = True
     #-----------------------------------#
-    #   代表进行四倍的上采样
+    #   Represents 4x upsampling
     #-----------------------------------#
     scale_factor    = 4
     #-----------------------------------#
-    #   获得输入与输出的图片的shape
+    #   Get input and output image shapes
     #-----------------------------------#
     lr_shape        = [96, 96]
     hr_shape        = [lr_shape[0] * scale_factor, lr_shape[1] * scale_factor]
     #--------------------------------------------------------------------------#
-    #   如果想要断点续练就将model_path设置成logs文件夹下已经训练的权值文件。 
-    #   当model_path = ''的时候不加载整个模型的权值。
+    #   For resuming training, set model_path to the trained weights file in logs folder.
+    #   When model_path = '', no model weights will be loaded.
     #
-    #   此处使用的是整个模型的权重，因此是在train.py进行加载的。
-    #   如果想要让模型从0开始训练，则设置model_path = ''。
+    #   Here we use the complete model weights, so they are loaded in train.py.
+    #   To train the model from scratch, set model_path = ''.
     #--------------------------------------------------------------------------#
     G_model_path    = ""
     D_model_path    = ""
 
     #------------------------------#
-    #   训练参数设置
+    #   Training parameter settings
     #------------------------------#
     Init_epoch      = 0
     Epoch           = 200
     batch_size      = 4
     lr              = 0.0002
     #------------------------------#
-    #   每隔50个step保存一次图片
+    #   Save images every 50 steps
     #------------------------------#
     save_interval   = 50
     #------------------------------#
-    #   获得图片路径
+    #   Dataset path (New: Directly specify dataset folder)
+    #   Replaces the original annotation_path and train_lines.txt
     #------------------------------#
-    annotation_path = "train_lines.txt"
+    datasets_path   = "datasets/"
+
+    print("🚀 Starting training preparation...")
+    print("📊 Scanning dataset...")
+    
+    #------------------------------#
+    #   Automatic dataset scanning (New feature!)
+    #   Replaces the txt_annotation.py + train_lines.txt workflow
+    #------------------------------#
+    try:
+        lines = get_dataset_lines(datasets_path)
+        num_train = len(lines)
+        print(f"📈 Number of training samples: {num_train}")
+    except ValueError as e:
+        print(f"{e}")
+        print("\n🔧 Solutions:")
+        print(f"   1. Create dataset folder: mkdir {datasets_path}")
+        print(f"   2. Place your CT scan images into '{datasets_path}' folder")
+        print("   3. Ensure correct image formats (JPG, PNG, BMP, TIFF, etc.)")
+        exit(1)
 
     #---------------------------#
-    #   生成网络和评价网络
+    #   Generator and Discriminator networks
     #---------------------------#
     G_model = Generator(scale_factor)
     D_model = Discriminator()
     #-----------------------------------#
-    #   创建VGG模型，该模型用于提取特征
+    #   Create VGG model for feature extraction
     #-----------------------------------#
     VGG_model = vgg19(pretrained=True)
     VGG_feature_model = nn.Sequential(*list(VGG_model.features)[:-1]).eval()
@@ -65,7 +129,7 @@ if __name__ == "__main__":
         param.requires_grad = False
 
     #------------------------------------------#
-    #   将训练好的模型重新载入
+    #   Load pre-trained model weights
     #------------------------------------------#
     if G_model_path != '':
         device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -100,18 +164,14 @@ if __name__ == "__main__":
     BCE_loss = nn.BCELoss()
     MSE_loss = nn.MSELoss()
 
-    with open(annotation_path) as f:
-        lines = f.readlines()
-    num_train = len(lines)
-
     #------------------------------------------------------#
-    #   Init_Epoch为起始世代
-    #   Epoch总训练世代
+    #   Init_Epoch is the starting epoch
+    #   Epoch is the total training epochs
     #------------------------------------------------------#
     if True:
         epoch_step      = min(num_train // batch_size, 2000)
         if epoch_step == 0:
-            raise ValueError("数据集过小，无法进行训练，请扩充数据集。")
+            raise ValueError("Dataset too small for training, please expand the dataset.")
         #------------------------------#
         #   Adam optimizer
         #------------------------------#
@@ -124,6 +184,7 @@ if __name__ == "__main__":
         gen             = DataLoader(train_dataset, shuffle=True, batch_size=batch_size, num_workers=4, pin_memory=True,
                                     drop_last=True, collate_fn=SRGAN_dataset_collate)
 
+        print("🎯 Starting training...")
         for epoch in range(Init_epoch, Epoch):
             fit_one_epoch(G_model_train, D_model_train, G_model, D_model, VGG_feature_model, G_optimizer, D_optimizer, BCE_loss, MSE_loss, epoch, epoch_step, gen, Epoch, Cuda, batch_size, save_interval)
             G_lr_scheduler.step()
